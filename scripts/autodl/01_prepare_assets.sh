@@ -2,8 +2,10 @@
 set -euo pipefail
 
 export HF_ENDPOINT="${HF_ENDPOINT:-https://hf-mirror.com}"
-export HF_HOME="${HF_HOME:-/root/autodl-tmp/hf_home}"
-export MEDICALGPT_ROOT="${MEDICALGPT_ROOT:-/root/autodl-tmp/medical/MedicalGPT}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+export MEDICALGPT_ROOT="${MEDICALGPT_ROOT:-$REPO_ROOT}"
+export HF_HOME="${HF_HOME:-$MEDICALGPT_ROOT/hf_home}"
 export BASE_MODEL="${BASE_MODEL:-Qwen/Qwen2.5-7B-Instruct}"
 export DOWNLOAD_MEDICAL_DATASET="${DOWNLOAD_MEDICAL_DATASET:-0}"
 
