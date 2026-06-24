@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SRC="${1:-/Users/kristianzeng/Documents/MedicalGPT-src}"
-DEST="${2:-/Users/kristianzeng/Documents/MedicalGPT}"
+SRC="${1:-../MedicalGPT-src}"
+DEST="${2:-$(pwd)}"
 
 if [ ! -d "$SRC" ]; then
   echo "Source directory not found: $SRC"
@@ -26,4 +26,3 @@ rsync -av \
 
 echo "Synced MedicalGPT source from $SRC to $DEST"
 echo "Kept local README and excluded data/model/output directories."
-

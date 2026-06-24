@@ -4,7 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 export MEDICALGPT_ROOT="${MEDICALGPT_ROOT:-$REPO_ROOT}"
-export CUDA_VISIBLE_DEVICES="${CUDA_VISIBLE_DEVICES:-0}"
+export CUDA_VISIBLE_DEVICES="${CUDA_VISIBLE_DEVICES:-0,1}"
 export BASE_MODEL="${BASE_MODEL:-Qwen/Qwen2.5-7B-Instruct}"
 MODEL_DIR_NAME="$(basename "$BASE_MODEL")"
 export BASE_MODEL_PATH="${BASE_MODEL_PATH:-$MEDICALGPT_ROOT/models/base/$MODEL_DIR_NAME}"
@@ -22,7 +22,7 @@ mkdir -p "$OUTPUT_DIR" "$CACHE_DIR"
 if [[ "$BASE_MODEL_PATH" = /* && ! -d "$BASE_MODEL_PATH" ]]; then
   echo "BASE_MODEL_PATH does not exist: $BASE_MODEL_PATH"
   echo "Run first:"
-  echo "  BASE_MODEL=$BASE_MODEL bash scripts/autodl/01_prepare_assets.sh"
+  echo "  BASE_MODEL=$BASE_MODEL bash scripts/server/01_prepare_assets.sh"
   exit 2
 fi
 

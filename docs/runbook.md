@@ -5,7 +5,7 @@
 本地已经完成：
 
 - 官方 MedicalGPT 源码同步
-- AutoDL wrapper 脚本
+- 通用服务器 wrapper 脚本
 - 数据审计脚本
 - PPO/GRPO smoke 数据构造脚本
 - 实验记录模板
@@ -26,7 +26,7 @@ python experiments/medical_posttrain/build_posttrain_data.py \
 
 ## Phase 1: Push Code
 
-建议把当前仓库推到自己的 GitHub 私仓，然后 AutoDL 上直接 clone/pull。
+建议把当前仓库推到自己的 GitHub 私仓，然后在双 4090 服务器上 clone/pull。
 
 ```bash
 git status
@@ -34,39 +34,42 @@ git add .
 git commit -m "Add MedicalGPT post-training reproduction workflow"
 ```
 
-## Phase 2: AutoDL Environment
+## Phase 2: Dual RTX 4090 Environment
 
-推荐先租：
+推荐服务器配置：
 
-- 1 x RTX 4090 24GB
-- PyTorch 镜像，CUDA 12.x
-- 数据盘挂载到 `/root/autodl-tmp`
+- 2 x RTX 4090 24GB
+- PyTorch + CUDA 12.x
+- 项目目录使用通用路径，例如 `/data/medical/MedicalGPT`
+- 不在仓库中保存个人路径、姓名、token 或平台专属配置
 
 进入远程：
 
 ```bash
-cd /root/autodl-tmp/medical/MedicalGPT
-bash scripts/autodl/00_env_check.sh
-bash scripts/autodl/01_prepare_assets.sh
-bash scripts/autodl/03_build_smoke_data.sh
+cd /data/medical/MedicalGPT
+bash scripts/server/00_env_check.sh
+bash scripts/server/01_prepare_assets.sh
+bash scripts/server/03_build_smoke_data.sh
 ```
 
 `01_prepare_assets.sh` 默认只安装环境并下载 base model，不下载完整 `shibing624/medical` 数据集。确认环境和 demo 数据跑通后，再执行：
 
 ```bash
-DOWNLOAD_MEDICAL_DATASET=1 bash scripts/autodl/01_prepare_assets.sh
+DOWNLOAD_MEDICAL_DATASET=1 bash scripts/server/01_prepare_assets.sh
 ```
 
 ## Phase 3: DPO Baseline
 
 先用官方 demo 偏好数据跑通流程：
 
+DPO baseline 使用 4bit QLoRA，默认单进程通过 `device_map=auto` 在两张 4090 上切分模型，比直接 `torchrun` 更稳。
+
 ```bash
-CUDA_VISIBLE_DEVICES=0 \
-BASE_MODEL_PATH=/root/autodl-tmp/medical/MedicalGPT/models/base/Qwen2.5-7B-Instruct \
-TRAIN_FILE_DIR=/root/autodl-tmp/medical/MedicalGPT/data/reward \
+CUDA_VISIBLE_DEVICES=0,1 \
+BASE_MODEL_PATH=/data/medical/MedicalGPT/models/base/Qwen2.5-7B-Instruct \
+TRAIN_FILE_DIR=/data/medical/MedicalGPT/data/reward \
 MAX_STEPS=100 \
-bash scripts/autodl/10_run_dpo_baseline.sh
+bash scripts/server/10_run_dpo_baseline.sh
 ```
 
 产物：
@@ -78,11 +81,13 @@ bash scripts/autodl/10_run_dpo_baseline.sh
 
 ## Phase 4: Reward Model
 
+Reward Model wrapper 也保持单进程运行。原始项目说明 RM 暂不支持 `torchrun` 多卡训练，双 4090 主要通过可见双卡和 `device_map=auto` 缓解显存压力。
+
 ```bash
-CUDA_VISIBLE_DEVICES=0 \
-BASE_MODEL_PATH=/root/autodl-tmp/medical/MedicalGPT/models/base/Qwen2.5-7B-Instruct \
-TRAIN_FILE_DIR=/root/autodl-tmp/medical/MedicalGPT/data/reward \
-bash scripts/autodl/20_run_reward_model.sh
+CUDA_VISIBLE_DEVICES=0,1 \
+BASE_MODEL_PATH=/data/medical/MedicalGPT/models/base/Qwen2.5-7B-Instruct \
+TRAIN_FILE_DIR=/data/medical/MedicalGPT/data/reward \
+bash scripts/server/20_run_reward_model.sh
 ```
 
 产物：
@@ -92,27 +97,29 @@ bash scripts/autodl/20_run_reward_model.sh
 
 ## Phase 5: PPO Smoke Test
 
-PPO 显存更重，建议先 2 卡：
+PPO 显存更重，双 4090 先只做 smoke test：
 
 ```bash
 CUDA_VISIBLE_DEVICES=0,1 \
-BASE_MODEL_PATH=/root/autodl-tmp/medical/MedicalGPT/models/base/Qwen2.5-7B-Instruct \
-REWARD_MODEL_PATH=/root/autodl-tmp/medical/MedicalGPT/outputs/rm/qwen25-7b-rm \
+BASE_MODEL_PATH=/data/medical/MedicalGPT/models/base/Qwen2.5-7B-Instruct \
+REWARD_MODEL_PATH=/data/medical/MedicalGPT/outputs/rm/qwen25-7b-rm \
 MAX_STEPS=100 \
-bash scripts/autodl/30_run_ppo_smoke.sh
+bash scripts/server/30_run_ppo_smoke.sh
 ```
 
 目标只是跑通，不追求最终效果。
 
 ## Phase 6: GRPO Smoke Test
 
+GRPO wrapper 使用 `torchrun --nproc_per_node 2`，如果只想临时用一张卡，可以设置 `CUDA_VISIBLE_DEVICES=0 NPROC_PER_NODE=1`。
+
 ```bash
-CUDA_VISIBLE_DEVICES=0 \
-BASE_MODEL_PATH=/root/autodl-tmp/medical/MedicalGPT/models/base/Qwen2.5-7B-Instruct \
-TRAIN_FILE_DIR=/root/autodl-tmp/medical/MedicalGPT/data/grpo \
+CUDA_VISIBLE_DEVICES=0,1 \
+BASE_MODEL_PATH=/data/medical/MedicalGPT/models/base/Qwen2.5-7B-Instruct \
+TRAIN_FILE_DIR=/data/medical/MedicalGPT/data/grpo \
 TRAIN_SAMPLES=100 \
 MAX_STEPS=50 \
-bash scripts/autodl/40_run_grpo_smoke.sh
+bash scripts/server/40_run_grpo_smoke.sh
 ```
 
 先跑通官方格式奖励 + answer 奖励。后续再把 reward 改成医疗语义相似度、格式规范和 judge 评分。

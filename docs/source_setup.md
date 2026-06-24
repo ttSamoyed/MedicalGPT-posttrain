@@ -5,13 +5,13 @@
 Run this in a normal local terminal if Codex network is unstable:
 
 ```bash
-GIT_LFS_SKIP_SMUDGE=1 git clone --depth 1 --filter=blob:none https://github.com/shibing624/MedicalGPT.git /Users/kristianzeng/Documents/MedicalGPT-src
+GIT_LFS_SKIP_SMUDGE=1 git clone --depth 1 --filter=blob:none https://github.com/shibing624/MedicalGPT.git /path/to/MedicalGPT-src
 ```
 
 Fallback:
 
 ```bash
-GIT_LFS_SKIP_SMUDGE=1 git clone --depth 1 https://github.com/shibing624/MedicalGPT.git /Users/kristianzeng/Documents/MedicalGPT-src
+GIT_LFS_SKIP_SMUDGE=1 git clone --depth 1 https://github.com/shibing624/MedicalGPT.git /path/to/MedicalGPT-src
 ```
 
 These commands clone source code only. They do not download Qwen model weights.
@@ -21,7 +21,7 @@ These commands clone source code only. They do not download Qwen model weights.
 After clone succeeds:
 
 ```bash
-cd /Users/kristianzeng/Documents/MedicalGPT
+cd /path/to/MedicalGPT
 bash scripts/sync_medicalgpt_source.sh
 ```
 
@@ -46,5 +46,4 @@ find scripts -maxdepth 2 -type f | sort
 find training -maxdepth 2 -type f | sort
 ```
 
-Then adapt the wrappers under `scripts/autodl/` to the actual official arguments.
-
+Then adapt the wrappers under `scripts/server/` to the actual official arguments.

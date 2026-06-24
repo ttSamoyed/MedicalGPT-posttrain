@@ -22,7 +22,7 @@ mkdir -p "$OUTPUT_DIR"
 if [[ "$BASE_MODEL_PATH" = /* && ! -d "$BASE_MODEL_PATH" ]]; then
   echo "BASE_MODEL_PATH does not exist: $BASE_MODEL_PATH"
   echo "Run first:"
-  echo "  BASE_MODEL=$BASE_MODEL bash scripts/autodl/01_prepare_assets.sh"
+  echo "  BASE_MODEL=$BASE_MODEL bash scripts/server/01_prepare_assets.sh"
   exit 2
 fi
 
